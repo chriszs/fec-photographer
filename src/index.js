@@ -26,15 +26,21 @@ function takePhoto(expenditure,cb) {
 
     fs.exists(file,function (exists) {
         if (!exists) {
+            console.log(address);
+
             request(url)
                 .on('end',function () {
                     setTimeout(function () {
                         cb(null);
                     },2000);
                 })
-                .on('error',function () {
+                .on('error',function (err) {
+                    if (err) {
+                        console.error(err);
+                    }
+
                     setTimeout(function () {
-                        cb(null);
+                        cb();
                     },2000);
                 })
                 .pipe(fs.createWriteStream(file));
@@ -50,11 +56,15 @@ function takePhoto(expenditure,cb) {
 function queueExpenditures() {
     models.fec_expenditure.findAll({
         where: {
-            filing_id: 1079423 // latest Trump filing
+            // filing_id: 1079423 // latest Trump filing
+            filing_id: 1079219 // latest Clinton filing
         },
-        limit: 100
+        limit: 20000, // respect the 25,000 per day limit
+        attributes: ['payee_street_1','payee_city','payee_state','payee_zip_code']
     })
     .then(function (expenditures) {
+        console.log(expenditures.length);
+
         var q = async.queue(takePhoto,1);
 
         q.push(expenditures);
